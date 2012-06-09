@@ -3,16 +3,11 @@
  */
 package com.foundation.tetris;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.View;
 
@@ -38,8 +33,6 @@ public class GameView extends View {
 	private Bitmap[] mBlockBitmap = new Bitmap[5]; 
 	
 	private boolean mIsInitialize;
-	
-	
 
 	public GameView(Context context) {
 		super(context);
@@ -116,11 +109,11 @@ public class GameView extends View {
 		canvas.drawRect(left, top, right, bottom, strokepaint);
 	}
 	
-	public void startGame() {
+	public void startGame(TetrisScene.GameOverListener listener) {
 		Log.v(TAG, "startGame");
 		mScene.CreateScene(PLAY_AREA_WIDTH_BLOCK, PLAY_AREA_HEIGHT_BLOCK);
 		mScene.StartGame();
-
+		mScene.setGameOverListener(listener);
 		mIsInitialize = true;
 	}
 	

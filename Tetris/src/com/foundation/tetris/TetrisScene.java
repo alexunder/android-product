@@ -18,7 +18,13 @@ public class TetrisScene {
 
 	private int m_i_current_block_index;
 	private int m_i_next_block_index;
+
+	private GameOverListener mListener;
 	
+	public interface GameOverListener{
+		public void GameOver();
+	}
+
 	public TetrisScene() {
 		mcontext_freeze   = null;
 		mcontext_activity = null;
@@ -63,6 +69,12 @@ public class TetrisScene {
 		
 	public void EndGame() {
       //maybe invoke a callback function
+		Log.v(TAG, "EndGame");
+		mListener.GameOver();
+	}
+	
+	public void setGameOverListener(GameOverListener listener) {
+		mListener = listener;
 	}
 	
 	public void user_right() {
