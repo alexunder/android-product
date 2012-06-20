@@ -9,13 +9,17 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.GestureDetector;
+import android.view.GestureDetector.OnGestureListener;
 import android.view.View;
+import android.view.View.OnTouchListener;
 
 /**
  * @author alexunder
  *
  */
-public class GameView extends View {
+public class GameView extends View implements OnTouchListener, OnGestureListener {
 
 	private static final String TAG = "GameView";
 	
@@ -26,6 +30,10 @@ public class GameView extends View {
 	
 	private static final int BLOCK_CUBE_SIZE = 23;
 	
+	private static final int FLING_MIN_VELOCITY = 200;
+	private static final int FLING_MIN_DISTANCE_X = 30;
+	private static final int FLING_MIN_DISTANCE_Y = 50;
+	
 	private Paint fillpaint;
 	private Paint strokepaint;
 	
@@ -33,9 +41,12 @@ public class GameView extends View {
 	private Bitmap[] mBlockBitmap = new Bitmap[5]; 
 	
 	private boolean mIsInitialize;
-
+	
+	private GestureDetector mGestureDetector;
+	
 	public GameView(Context context) {
 		super(context);
+		Log.v(TAG, "GameView");
 		
 		fillpaint = new Paint();
 		strokepaint = new Paint();
@@ -47,6 +58,9 @@ public class GameView extends View {
 		fillpaint.setStyle(Paint.Style.FILL);
 		mScene = new TetrisScene();
 		mIsInitialize = false;
+		
+		mGestureDetector = new GestureDetector(context, this);  
+		mGestureDetector.setIsLongpressEnabled(true);  
 	}
 	
 	@Override
@@ -85,6 +99,77 @@ public class GameView extends View {
 		}	
 	}
 	
+	 @Override
+	 public boolean onTouchEvent(MotionEvent me){
+		 Log.v(TAG, "onTouchEvent");
+	     if (mGestureDetector.onTouchEvent(me))
+	    	 return true;
+	     else
+	         return super.onTouchEvent(me); // or false (it's what you whant).
+	    }
+	
+	@Override
+    public boolean onTouch(View v, MotionEvent event) {
+		Log.v(TAG, "onTouch");
+		return false;
+	}
+	
+	@Override
+    public boolean onSingleTapUp(MotionEvent e) {
+          Log.v(TAG, "onSingleTapUp");
+          mScene.user_rotate();
+          invalidate();
+          return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent e) {
+    	Log.v(TAG, "onShowPress");
+    	//mScene.user_rotate();
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX, float distanceY) {
+    	Log.v(TAG, "onScroll");
+    	return false;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+    	Log.v(TAG, "onLongPress");
+    }
+
+    @Override
+    public boolean onDown(MotionEvent e) {
+    	Log.v(TAG, "onDown");
+        return true;
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+    	 Log.v(TAG, "onFling");
+    	 Log.v(TAG, "velocityX=" + velocityX);
+    	 Log.v(TAG, "velocityY=" + velocityY);
+    	 Log.v(TAG, "distanceX="  + Math.abs(e1.getX() - e2.getX()));
+    	 Log.v(TAG, "distanceY="  + Math.abs(e1.getY() - e2.getY()));
+    	 
+    	 //left or right
+    	 if (Math.abs(velocityX) > FLING_MIN_VELOCITY) {
+    		 if (e1.getX() - e2.getX() > FLING_MIN_DISTANCE_X ) {
+    			 mScene.user_left();
+    			 invalidate();
+    		 } else if (e2.getX() - e1.getX() > FLING_MIN_DISTANCE_X) {
+    			 mScene.user_right();
+    			 invalidate();
+    		 }
+    	 } else if(Math.abs(velocityY) > FLING_MIN_VELOCITY) {
+    		 if (e2.getY() - e1.getY() > FLING_MIN_DISTANCE_Y) {
+    			 mScene.user_fall();
+    			 invalidate();
+    		 }
+    	 }
+    	 return false;
+    }
 	/**
 	 * Draws on screen the playable area
 	 * 

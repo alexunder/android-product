@@ -168,13 +168,11 @@ public class TetrisScene {
 	private void DrawBlock() {
 		//Sync_Scene_Data(mcontext_activity, mcontext_freeze);
 		//static ----> active
-		Log.v(TAG, "static ----> active");
 		mcontext_activity.SyncFromOtherSceneData(mcontext_freeze);
 		mblock.draw(mcontext_activity);
 	}
 	
 	private void CheckGameStatus() {
-		Log.v(TAG, "CheckGameStatus");
 		int i;
 		int j;
 		int flag = 0;
@@ -221,13 +219,11 @@ public class TetrisScene {
 		
 		//Sync_Scene_Data(mcontext_freeze, mcontext_activity);
 		//Active ----> static
-		Log.v(TAG, "Active ----> static");
 		mcontext_freeze.SyncFromOtherSceneData(mcontext_activity);
 		BlockFactory();
 	}
 	
 	private void BlockFactory() {
-		Log.v(TAG, "BlockFactory");
 		m_i_current_block_index = m_i_next_block_index;
 		m_i_next_block_index = MathUtil.generateRandomNumber( 0, 4);
 

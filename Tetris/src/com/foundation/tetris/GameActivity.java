@@ -114,7 +114,6 @@ public class GameActivity extends Activity
     	 
     	 mtask = new TimerTask(){  
     	    	 	public void run() {  
-    	    	 		Log.v(TAG, "TimerTask");
     	    	 		mView.userDown();
     	    	 		mHandler.sendEmptyMessage(MSG_INVALIDATE_VIEW);
     	    	 	}  
