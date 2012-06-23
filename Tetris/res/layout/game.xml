@@ -2,11 +2,34 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
-    
-    <TextView
-        android:layout_height="wrap_content"
-        android:layout_width="fill_parent"
-        android:text="It works!" />
+    android:orientation="horizontal" >
 
+    <RelativeLayout  
+            android:layout_width="fill_parent"  
+            android:layout_height="wrap_content"  
+            android:layout_weight="1" >  
+
+    <com.foundation.tetris.GameView android:id="@+id/gameview"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"/>
+        
+         <TextView   
+            android:id="@+id/textview"  
+            android:layout_width="wrap_content"  
+            android:layout_height="wrap_content"  
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp" 
+            android:gravity="center_horizontal"
+            android:text="Next"
+            android:textSize="28sp"/>
+         
+          <Button android:layout_width="wrap_content"  
+                android:layout_height="wrap_content"  
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"  
+                android:text="Pause"
+                android:textSize="20sp"  
+                android:id="@+id/pause"/>  
+    </RelativeLayout>
 </LinearLayout>

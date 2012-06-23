@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.GestureDetector;
@@ -44,8 +45,10 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
 	
 	private GestureDetector mGestureDetector;
 	
-	public GameView(Context context) {
-		super(context);
+	private boolean mIsPause;
+	
+	public GameView(Context context, AttributeSet attrs) {
+		super(context, attrs);
 		Log.v(TAG, "GameView");
 		
 		fillpaint = new Paint();
@@ -58,6 +61,7 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
 		fillpaint.setStyle(Paint.Style.FILL);
 		mScene = new TetrisScene();
 		mIsInitialize = false;
+		mIsPause = false;
 		
 		mGestureDetector = new GestureDetector(context, this);  
 		mGestureDetector.setIsLongpressEnabled(true);  
@@ -97,6 +101,8 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
 				canvas.drawBitmap(mBlockBitmap[idrawindex - 1], xCoordinate, yCoordinate, null); 
 			}
 		}	
+		
+		drawNextBlock(canvas);
 	}
 	
 	 @Override
@@ -117,6 +123,10 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
 	@Override
     public boolean onSingleTapUp(MotionEvent e) {
           Log.v(TAG, "onSingleTapUp");
+          if(mIsPause) {
+        	  return true;
+          }
+          
           mScene.user_rotate();
           invalidate();
           return false;
@@ -142,6 +152,11 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
     @Override
     public boolean onDown(MotionEvent e) {
     	Log.v(TAG, "onDown");
+    	
+    	if(mIsPause) {
+    		return false;
+        }
+    	
         return true;
     }
 
@@ -194,6 +209,26 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
 		canvas.drawRect(left, top, right, bottom, strokepaint);
 	}
 	
+	private void drawNextBlock(Canvas canvas) {
+		int left = PLAY_AREA_LEFT_PADDING + PLAY_AREA_WIDTH_BLOCK*BLOCK_CUBE_SIZE;
+		//int right = left + BLOCK_CUBE_SIZE*4;
+		int top = PLAY_AREA_UP_PADDING + 25;
+		//int bottom = top + BLOCK_CUBE_SIZE*4;
+		
+		byte [] data = new byte[16];
+		if(mScene.GetNextBlockData(data, 16)) {
+			for( int i = 0; i < 4; i++)
+				for( int j = 0; j < 4; j++)
+				{
+					if(data[j + i*4] > 0) {
+						int xCoordinate = left + BLOCK_CUBE_SIZE*j;
+						int yCoordinate = top + BLOCK_CUBE_SIZE*i;
+						canvas.drawBitmap(mBlockBitmap[data[j+i*4] - 1], xCoordinate, yCoordinate, null);	
+					} 
+				}
+		}
+	}
+	
 	public void startGame(TetrisScene.GameOverListener listener) {
 		Log.v(TAG, "startGame");
 		mScene.CreateScene(PLAY_AREA_WIDTH_BLOCK, PLAY_AREA_HEIGHT_BLOCK);
@@ -204,5 +239,9 @@ public class GameView extends View implements OnTouchListener, OnGestureListener
 	
 	public void userDown() {
 		mScene.user_down();
+	}
+	
+	public void SetPauseState(boolean state) {
+		mIsPause = state;
 	}
 }

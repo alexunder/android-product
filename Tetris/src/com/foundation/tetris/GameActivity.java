@@ -15,8 +15,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 
 /**
  * @author alexunder
@@ -34,6 +36,9 @@ public class GameActivity extends Activity
 	
 	private GameView mView;
 	private Timer mTimer;
+	private Button mPauseBtn;
+	
+	private boolean mIsPause = false;;
 	
 	Handler mHandler = new Handler() {  
         public void handleMessage(Message msg) {   
@@ -57,13 +62,28 @@ public class GameActivity extends Activity
 	public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
 	        
+    	requestWindowFeature(Window.FEATURE_NO_TITLE);
+    	
 	    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,   
 	    		WindowManager.LayoutParams.FLAG_FULLSCREEN);  
 	        
-	    requestWindowFeature(Window.FEATURE_NO_TITLE);
-	    mView = new GameView(getBaseContext());
-	    setContentView(mView);
+	    //mView = new GameView(getBaseContext());
+	    setContentView(R.layout.game);
 		
+	    mView = (GameView)findViewById(R.id.gameview);
+	    mPauseBtn = (Button)findViewById(R.id.pause);
+	    
+	    mPauseBtn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+            	if(mIsPause) {
+            		gameResume();
+            	} else {
+            		gamePause();
+            	}
+            }
+        });
+	    
 	    GameStart();
 	 }
     
@@ -104,12 +124,7 @@ public class GameActivity extends Activity
     	 return dialog;
      }
      
-     public void GameOver() {
-    	 mTimer.cancel();
-    	 mHandler.sendEmptyMessage(MSG_GAME_OVER);
- 	 }
-     
-     public void GameStart() {
+     private void LaunchTimer() {
     	 mTimer = new Timer();
     	 
     	 mtask = new TimerTask(){  
@@ -120,6 +135,31 @@ public class GameActivity extends Activity
     			};  
     	 
     	 mTimer.schedule(mtask, 100, 1000);
+     }
+     
+     public void GameOver() {
+    	 mTimer.cancel();
+    	 mHandler.sendEmptyMessage(MSG_GAME_OVER);
+ 	 }
+     
+     public void GameStart() {
+    	 LaunchTimer();
  		 mView.startGame(this);
      }
+     
+     public void gamePause() {
+    	 mTimer.cancel();
+    	 mView.SetPauseState(true);
+    	 mPauseBtn.setText("Resume");
+    	 mIsPause = true;
+     }
+     
+     public void gameResume() {
+    	 LaunchTimer();
+    	 
+    	 mView.SetPauseState(false);
+    	 mPauseBtn.setText("Pause");
+    	 mIsPause = false;
+     }
+     
 }
