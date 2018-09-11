@@ -8,11 +8,10 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
-import static android.graphics.BlurMaskFilter.Blur.SOLID;
 import static java.lang.Math.abs;
 
 /**
- * Created by xuchenyu on 9/10/18.
+ * Created by Alexlander on 9/10/18.
  */
 
 public class ChartView extends View {
@@ -20,6 +19,10 @@ public class ChartView extends View {
 
     private static final int CHART_AREA_HOR_PADDING = 50;
     private static final int CHART_AREA_VER_PADDING = 50;
+    private static final int CHART_AREA_VER_TOP_PADDING = 100;
+
+    private static final int TEXT_TITLE_SIZE = 50;
+    private static final int TEXT_LABEL_SIZE = 25;
 
     public ChartView(Context context) {
         this(context, null);
@@ -37,11 +40,16 @@ public class ChartView extends View {
         mDataPaint.setColor(mDefaultLineColor[0]);
         mDataPaint.setStyle(Paint.Style.STROKE);
         mDataPaint.setStrokeWidth(4);
-
-        //mCoordinateAxisPaint.setTextSize(Util.size2sp(defaultXySize, getContext()));
         mCoordinateAxisPaint.setColor(mDefaultTextColor);
 
-        mXMaxValue = 59;
+        mFillTitle = new Paint();
+        mFillTitle.setStyle(Paint.Style.FILL);
+
+        mTextPaint = new Paint();
+        mTextPaint.setColor(Color.BLACK);
+        mTextPaint.setTextAlign(Paint.Align.CENTER);
+
+        mXMaxValue = 60;
         mXMinValue = 0;
         mYMaxValue = 100;
         mYMinValue = 0;
@@ -55,10 +63,15 @@ public class ChartView extends View {
 
     private Paint mCoordinateAxisPaint;
     private Paint mDataPaint;
+    private Paint mFillTitle;
+    private Paint mTextPaint;
+
     private int mXMaxValue;
     private int mXMinValue;
     private float mYMaxValue;
     private float mYMinValue;
+    private float mYInternalMaxValue;
+    private float mYInternalMinValue;
     private float mXRealInterval;
     private float mYRealInterval;
     private int mXCoordinateInterval;
@@ -86,7 +99,7 @@ public class ChartView extends View {
 
     private void DrawCoordinateAxises(Canvas canvas) {
         int left   = CHART_AREA_HOR_PADDING;
-        int top    = CHART_AREA_VER_PADDING;
+        int top    = CHART_AREA_VER_TOP_PADDING;
         int right  = getMeasuredWidth()  - CHART_AREA_HOR_PADDING;
         int bottom = getMeasuredHeight() - CHART_AREA_HOR_PADDING;
 
@@ -94,21 +107,34 @@ public class ChartView extends View {
         int height = bottom - top;
 
         //Draw X axis firstly
-        int yOriginal = bottom;
-        if (mYMinValue < 0.0) {
-            yOriginal =(int)((mYMaxValue*height) / (mYMaxValue + abs(mYMinValue)));
-        }
-        canvas.drawLine(left, yOriginal, right, yOriginal, mCoordinateAxisPaint);
+        //int yOriginal = bottom;
+        //int xOriginal = left;
+
+        canvas.drawLine(left, bottom, right, bottom, mCoordinateAxisPaint);
+        //Draw X axis label
+        mTextPaint.setTextSize(TEXT_LABEL_SIZE);
+        canvas.drawText(mXMinValue + "", left,
+                bottom + TEXT_LABEL_SIZE, mTextPaint);
+        canvas.drawText(mXMaxValue + "", left + width,
+                bottom + TEXT_LABEL_SIZE, mTextPaint);
 
         //Draw Y axis secondly
-        canvas.drawLine(left, yOriginal, left, top, mCoordinateAxisPaint);
+        canvas.drawLine(left, bottom, left, top, mCoordinateAxisPaint);
+
+        Log.d(TAG, "mYMinValue=" + mYMinValue );
+        Log.d(TAG, "mYMaxValue=" + mYMaxValue );
+        mTextPaint.setTextSize(TEXT_LABEL_SIZE);
+        canvas.drawText((int)mYMinValue + "", left - CHART_AREA_HOR_PADDING/2,
+                bottom, mTextPaint);
+        canvas.drawText((int)mYMaxValue + "", left - CHART_AREA_HOR_PADDING/2,
+                bottom - height, mTextPaint);
     }
 
     private void DrawDataLines(Canvas canvas) {
         int left   = CHART_AREA_HOR_PADDING;
-        int top    = CHART_AREA_VER_PADDING;
+        int top    = CHART_AREA_VER_TOP_PADDING;
         int right  = getMeasuredWidth()  - CHART_AREA_HOR_PADDING;
-        int bottom = getMeasuredHeight() - CHART_AREA_HOR_PADDING;
+        int bottom = getMeasuredHeight() - CHART_AREA_VER_PADDING;
 
         int width  = right  - left;
         int height = bottom - top;
@@ -116,14 +142,22 @@ public class ChartView extends View {
         mXRealInterval = width / mMaxCountOfData;
 
         if(mSource1.mData != null ) {
+            //Draw the title area
+            mFillTitle.setColor(mDefaultLineColor[0]);
+            canvas.drawRect(left, 0, left + width / 2,
+                    top, mFillTitle);
+
+            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
+            canvas.drawText(mSource1.name, left + width / 4, TEXT_TITLE_SIZE, mTextPaint);
+
             mDataPaint.setColor(mDefaultLineColor[0]);
             float startx = left;
-            float starty = top + height - (mSource1.mData[0] * height) / mYMaxValue;
+            float starty = top + height - ((mSource1.mData[0]- mYMinValue) * height) / mYInternalMaxValue;
             float endx = 0;
             float endy = 0;
             for (int i = 1; i < mMaxCountOfData; i++) {
                 endx = left + i*mXRealInterval;
-                endy = top + height - (mSource1.mData[i] * height) / mYMaxValue;
+                endy = top + height - ((mSource1.mData[i] - mYMinValue) * height) / mYInternalMaxValue;
                 canvas.drawLine(startx, starty, endx, endy, mDataPaint);
                 startx = endx;
                 starty = endy;
@@ -131,14 +165,22 @@ public class ChartView extends View {
         }
 
         if(mSource2.mData != null ) {
+            //Draw the title area
+            mFillTitle.setColor(mDefaultLineColor[1]);
+            canvas.drawRect(right - width / 2, 0, right,
+                    top, mFillTitle);
+
+            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
+            canvas.drawText(mSource2.name, right - width / 4, TEXT_TITLE_SIZE, mTextPaint);
+
             mDataPaint.setColor(mDefaultLineColor[1]);
             float startx = left;
-            float starty = top + height - (mSource2.mData[0] * height) / mYMaxValue;
+            float starty = top + height - ((mSource2.mData[0] - mYMinValue)* height) / mYInternalMaxValue;
             float endx = 0;
             float endy = 0;
             for (int i = 1; i < mMaxCountOfData; i++) {
                 endx = left + i*mXRealInterval;
-                endy = top + height - (mSource2.mData[i] * height) / mYMaxValue;
+                endy = top + height - ((mSource2.mData[i] - mYMinValue) * height) / mYInternalMaxValue;
                 canvas.drawLine(startx, starty, endx, endy, mDataPaint);
                 startx = endx;
                 starty = endy;
@@ -156,6 +198,8 @@ public class ChartView extends View {
     void setYScale(float min, float max) {
         mYMinValue = min;
         mYMaxValue = max;
+        mYInternalMaxValue = mYMaxValue - mYMinValue;
+        mYInternalMinValue = 0;
     }
 
     void setDataSource(CircularFifoQueue<Integer> data, String name, String unit, int index) {
@@ -183,5 +227,7 @@ public class ChartView extends View {
             mSource2.name = name;
             mSource2.unit = unit;
         }
+
+        invalidate();
     }
 }
