@@ -19,9 +19,9 @@ public class ChartView extends View {
 
     private static final int CHART_AREA_HOR_PADDING = 50;
     private static final int CHART_AREA_VER_PADDING = 50;
-    private static final int CHART_AREA_VER_TOP_PADDING = 100;
+    private static final int CHART_AREA_VER_BOTTOM_PADDING = 100;
 
-    private static final int TEXT_TITLE_SIZE = 50;
+    private static final int TEXT_TITLE_SIZE = 30;
     private static final int TEXT_LABEL_SIZE = 25;
 
     public ChartView(Context context) {
@@ -86,6 +86,7 @@ public class ChartView extends View {
     }
     private DataSource mSource1 = new DataSource();
     private DataSource mSource2 = new DataSource();
+    private DataSource mSource3 = new DataSource();
 
     private int[] mDefaultLineColor = {Color.RED, Color.GREEN, Color.BLUE};
     private int mDefaultTextColor = Color.GRAY;
@@ -95,13 +96,14 @@ public class ChartView extends View {
         super.onDraw(canvas);
         DrawCoordinateAxises(canvas);
         DrawDataLines(canvas);
+        DrawDataInfo(canvas);
     }
 
     private void DrawCoordinateAxises(Canvas canvas) {
         int left   = CHART_AREA_HOR_PADDING;
-        int top    = CHART_AREA_VER_TOP_PADDING;
+        int top    = CHART_AREA_VER_PADDING;
         int right  = getMeasuredWidth()  - CHART_AREA_HOR_PADDING;
-        int bottom = getMeasuredHeight() - CHART_AREA_HOR_PADDING;
+        int bottom = getMeasuredHeight() - CHART_AREA_VER_PADDING - CHART_AREA_VER_BOTTOM_PADDING;
 
         int width  = right  - left;
         int height = bottom - top;
@@ -113,28 +115,39 @@ public class ChartView extends View {
         canvas.drawLine(left, bottom, right, bottom, mCoordinateAxisPaint);
         //Draw X axis label
         mTextPaint.setTextSize(TEXT_LABEL_SIZE);
-        canvas.drawText(mXMinValue + "", left,
-                bottom + TEXT_LABEL_SIZE, mTextPaint);
-        canvas.drawText(mXMaxValue + "", left + width,
-                bottom + TEXT_LABEL_SIZE, mTextPaint);
+
+        int super_interval_x = 10;
+        int super_count_x = (mXMaxValue - mXMinValue) / super_interval_x;
+        int draw_interval_x = width / super_count_x;
+        for (int i= 0; i <= super_count_x; i++) {
+            int px  = left + i * draw_interval_x;
+            int py = bottom;
+            canvas.drawLine(px, py, px, py - 20, mCoordinateAxisPaint);
+            canvas.drawText(mXMinValue + i * super_interval_x + "",
+                    px, bottom + TEXT_LABEL_SIZE, mTextPaint);
+        }
 
         //Draw Y axis secondly
         canvas.drawLine(left, bottom, left, top, mCoordinateAxisPaint);
 
-        Log.d(TAG, "mYMinValue=" + mYMinValue );
-        Log.d(TAG, "mYMaxValue=" + mYMaxValue );
-        mTextPaint.setTextSize(TEXT_LABEL_SIZE);
-        canvas.drawText((int)mYMinValue + "", left - CHART_AREA_HOR_PADDING/2,
-                bottom, mTextPaint);
-        canvas.drawText((int)mYMaxValue + "", left - CHART_AREA_HOR_PADDING/2,
-                bottom - height, mTextPaint);
+        int super_interval_y = 20;
+        int super_count_y = (int)(mYInternalMaxValue - mYInternalMinValue) / super_interval_y;
+        int draw_interval_y = height / super_count_y;
+
+        for (int i = 0; i <= super_count_y; i++) {
+            int px = left;
+            int py = bottom - i * draw_interval_y;
+            canvas.drawLine(px, py, px + 20, py, mCoordinateAxisPaint);
+            canvas.drawText((int)mYMinValue + i*super_interval_y +"",
+                    px - CHART_AREA_HOR_PADDING/2, py, mTextPaint);
+        }
     }
 
     private void DrawDataLines(Canvas canvas) {
         int left   = CHART_AREA_HOR_PADDING;
-        int top    = CHART_AREA_VER_TOP_PADDING;
+        int top    = CHART_AREA_VER_PADDING;
         int right  = getMeasuredWidth()  - CHART_AREA_HOR_PADDING;
-        int bottom = getMeasuredHeight() - CHART_AREA_VER_PADDING;
+        int bottom = getMeasuredHeight() - CHART_AREA_VER_PADDING - CHART_AREA_VER_BOTTOM_PADDING;
 
         int width  = right  - left;
         int height = bottom - top;
@@ -142,14 +155,6 @@ public class ChartView extends View {
         mXRealInterval = width / mMaxCountOfData;
 
         if(mSource1.mData != null ) {
-            //Draw the title area
-            mFillTitle.setColor(mDefaultLineColor[0]);
-            canvas.drawRect(left, 0, left + width / 2,
-                    top, mFillTitle);
-
-            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
-            canvas.drawText(mSource1.name, left + width / 4, TEXT_TITLE_SIZE, mTextPaint);
-
             mDataPaint.setColor(mDefaultLineColor[0]);
             float startx = left;
             float starty = top + height - ((mSource1.mData[0]- mYMinValue) * height) / mYInternalMaxValue;
@@ -165,14 +170,6 @@ public class ChartView extends View {
         }
 
         if(mSource2.mData != null ) {
-            //Draw the title area
-            mFillTitle.setColor(mDefaultLineColor[1]);
-            canvas.drawRect(right - width / 2, 0, right,
-                    top, mFillTitle);
-
-            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
-            canvas.drawText(mSource2.name, right - width / 4, TEXT_TITLE_SIZE, mTextPaint);
-
             mDataPaint.setColor(mDefaultLineColor[1]);
             float startx = left;
             float starty = top + height - ((mSource2.mData[0] - mYMinValue)* height) / mYInternalMaxValue;
@@ -185,6 +182,71 @@ public class ChartView extends View {
                 startx = endx;
                 starty = endy;
             }
+        }
+
+        if(mSource3.mData != null ) {
+            mDataPaint.setColor(mDefaultLineColor[2]);
+            float startx = left;
+            float starty = top + height - ((mSource3.mData[0] - mYMinValue)* height) / mYInternalMaxValue;
+            float endx = 0;
+            float endy = 0;
+            for (int i = 1; i < mMaxCountOfData; i++) {
+                endx = left + i*mXRealInterval;
+                endy = top + height - ((mSource3.mData[i] - mYMinValue) * height) / mYInternalMaxValue;
+                canvas.drawLine(startx, starty, endx, endy, mDataPaint);
+                startx = endx;
+                starty = endy;
+            }
+        }
+    }
+
+    private void DrawDataInfo(Canvas canvas) {
+        int info_area_left   = CHART_AREA_HOR_PADDING;
+        int info_area_top    = getMeasuredHeight() - CHART_AREA_VER_BOTTOM_PADDING;
+        int info_area_right  = getMeasuredWidth()  - CHART_AREA_HOR_PADDING;
+        int info_area_bottom = getMeasuredHeight();
+
+        int block_length = getMeasuredWidth() / 2;
+        int block_height = 20;
+        int current_top = info_area_top;
+
+        if (mSource1.mData != null) {
+            mFillTitle.setColor(mDefaultLineColor[0]);
+            canvas.drawRect(info_area_left, current_top,
+                    info_area_left + block_length,
+                    current_top + block_height, mFillTitle);
+
+            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
+            canvas.drawText(mSource1.name, info_area_left + block_length + 70,
+                    current_top + TEXT_TITLE_SIZE/2, mTextPaint);
+
+            current_top = current_top + 33;
+        }
+
+        if (mSource2.mData != null) {
+            mFillTitle.setColor(mDefaultLineColor[1]);
+            canvas.drawRect(info_area_left, current_top,
+                    info_area_left + block_length,
+                    current_top + block_height, mFillTitle);
+
+            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
+            canvas.drawText(mSource2.name, info_area_left + block_length + 70,
+                    current_top + TEXT_TITLE_SIZE/2, mTextPaint);
+
+            current_top = current_top + 33;
+        }
+
+        if (mSource3.mData != null) {
+            mFillTitle.setColor(mDefaultLineColor[2]);
+            canvas.drawRect(info_area_left, current_top,
+                    info_area_left + block_length,
+                    current_top + block_height, mFillTitle);
+
+            mTextPaint.setTextSize(TEXT_TITLE_SIZE);
+            canvas.drawText(mSource3.name, info_area_left + block_length + 70,
+                    current_top + TEXT_TITLE_SIZE/2, mTextPaint);
+
+            current_top = current_top + 33;
         }
     }
 
@@ -226,6 +288,15 @@ public class ChartView extends View {
 
             mSource2.name = name;
             mSource2.unit = unit;
+        } else if (index == 2) {
+            if (mSource3.mData == null)
+                mSource3.mData = new int [mMaxCountOfData];
+
+            for (int i = 0; i < mMaxCountOfData; i++)
+                mSource3.mData[i] = data.get(i);
+
+            mSource3.name = name;
+            mSource3.unit = unit;
         }
 
         invalidate();
